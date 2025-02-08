@@ -32,19 +32,33 @@ public class ShopSystem : MonoBehaviour
     /// <param name="shopItem">要购买的商品配置</param>
     public void TryPurchaseItem(ShopItem shopItem)
     {
-        // 库存检查
-        if (shopItem.stock == 0) return;
+        if (shopItem == null) return;
 
-        // 货币扣除
-        if (!CurrencyManager.Instance.TryDeductCurrencies(shopItem.costs))
+        Debug.Log($"尝试购买 {shopItem.item.itemName}");
+
+        // 检查库存
+        if (shopItem.stock == 0)
+        {
+            Debug.Log("商品已售罄");
             OnPurchaseFailed.Invoke(shopItem.costs);
-        return;
+            return;
+        }
 
-        // 物品发放
+        // 检查并扣除货币（原子操作）
+        if (!CurrencyManager.Instance.TryDeductCurrencies(shopItem.costs))
+        {
+            Debug.Log("货币不足");
+            OnPurchaseFailed.Invoke(shopItem.costs);
+            return;
+        }
+
+        // 添加物品到背包
         Inventory.Instance.AddItem(shopItem.item);
 
-        // 库存更新（-1表示无限库存不减少）
+        // 更新库存
         if (shopItem.stock > 0)
             shopItem.stock--;
+
+        Debug.Log("购买成功");
     }
 }
